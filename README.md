@@ -57,6 +57,18 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## Données de démonstration
+
+Après avoir configuré la connexion PostgreSQL dans le fichier `.env` et exécuté
+les migrations, insérez les abonnements de démonstration avec :
+
+```bash
+npm run seed
+```
+
+Le seed peut être rejoué : les abonnements existants sont retrouvés par leur nom et
+mis à jour, sans créer de doublons.
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
