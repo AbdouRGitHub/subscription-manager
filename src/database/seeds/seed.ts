@@ -1,5 +1,5 @@
 import dataSource from '../data-source.js';
-import { Subscriptions } from '../../subscriptions/entities/subscriptions.entity.js';
+import { Subscription } from '../../subscriptions/entities/subscriptions.entity.js';
 import { createSubscriptionSeeds } from './subscriptions.seed.js';
 
 async function seed(): Promise<void> {
@@ -9,7 +9,7 @@ async function seed(): Promise<void> {
     const subscriptions = createSubscriptionSeeds();
 
     await dataSource.transaction(async (manager) => {
-      const repository = manager.getRepository(Subscriptions);
+      const repository = manager.getRepository(Subscription);
 
       for (const subscription of subscriptions) {
         const existing = await repository.findOne({

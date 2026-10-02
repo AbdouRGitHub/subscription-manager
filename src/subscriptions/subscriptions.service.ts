@@ -1,26 +1,40 @@
-import { Injectable } from '@nestjs/common';
-import { CreateSubscriptionsDto } from './dto/create-subscriptions.dto.js';
-import { UpdateSubscriptionsDto } from './dto/update-subscriptions.dto.js';
+import {Injectable} from '@nestjs/common';
+import {CreateSubscriptionDto} from './dto/create-subscriptions.dto.js';
+import {CreateTrialSubscriptionDto} from './dto/create-trial-subscription.dto.js';
+import {InjectRepository} from '@nestjs/typeorm';
+import {
+  BillingPeriod,
+  Subscription,
+  SubscriptionStatus,
+} from './entities/subscriptions.entity.js';
+import {Repository} from 'typeorm';
+import {addDays, addMonths, addYears, parseISO} from 'date-fns';
 
 @Injectable()
 export class SubscriptionsService {
-  create(createSubscriptionsDto: CreateSubscriptionsDto) {
-    return 'This action adds new subscriptions';
+  constructor(
+    @InjectRepository(Subscription)
+    private readonly subscriptionRepository: Repository<Subscription>,
+  ) {
   }
 
-  findAll() {
-    return `This action returns all subscriptions`;
+  createSubscription(createSubscriptionDto: CreateSubscriptionDto) {
+    const subscription = this.subscriptionRepository.create(
+      createSubscriptionDto
+    );
+    subscription.startDate = parseISO(createSubscriptionDto.startDate);
+    subscription.nextBillingDate =
+      subscription.billingPeriod === BillingPeriod.MONTHLY
+        ? addMonths(subscription.startDate, 1)
+        : addYears(subscription.startDate, 1);
+
+    return this.subscriptionRepository.save(subscription);
   }
 
-  findOne(id: number) {
-    return `This action returns #${id} subscriptions`;
-  }
-
-  update(id: number, updateSubscriptionsDto: UpdateSubscriptionsDto) {
-    return `This action updates #${id} subscriptions`;
-  }
-
-  remove(id: number) {
-    return `This action removes #${id} subscriptions`;
+  async createTrialSubscription(
+    createTrialSubscriptionDto: CreateTrialSubscriptionDto,
+  ) {
+    const subscription = this.subscriptionRepository.create(createTrialSubscriptionDto);
+    return this.subscriptionRepository.save(subscription);
   }
 }

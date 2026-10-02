@@ -1,34 +1,91 @@
 import {Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
 
-@Entity()
-export class Subscriptions {
-  @PrimaryGeneratedColumn()
-  id: number;
+export enum SubscriptionStatus {
+  ACTIVE = 'active',
+  PAUSED = 'paused',
+  TRIAL = 'trial',
+  EXPIRED = 'expired',
+  CANCELLED = 'cancelled'
+}
 
-  @Column({length: 100})
+export enum CurrencyCode {
+  EUR = 'EUR',
+  USD = 'USD',
+  GBP = 'GBP',
+  CHF = 'CHF',
+  JPY = 'JPY'
+}
+
+export enum PaymentMethod {
+  CARD = 'card',
+  PAYPAL = 'paypal',
+  APPLE_PAY = 'apple_pay',
+  GOOGLE_PAY = 'google_pay',
+  PREPAY_CARD = 'prepay_card',
+  OTHER = 'other',
+}
+
+export enum BillingPeriod {
+  MONTHLY = 'monthly',
+  YEARLY = 'yearly',
+}
+
+@Entity({name: 'subscriptions'})
+export class Subscription {
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
+
+  @Column({length: 250})
   name: string;
 
   @Column({
     type: 'decimal',
     precision: 12,
-    scale: 2
+    scale: 2,
+    nullable: true,
   })
-  amount: string;
+  price: string;
 
   @Column({
-    default: 'EUR'
+    enum: CurrencyCode,
+    default: CurrencyCode.EUR,
   })
   currency: string;
 
   @Column({
-    length: 30
+    type: 'enum',
+    enum: BillingPeriod,
+    nullable: true,
   })
-  billingCycle: string;
+  billingPeriod: BillingPeriod;
+
+  @Column()
+  startDate: Date;
 
   @Column({
-    default: 'active'
+    nullable: true,
   })
-  status: string;
+  nextBillingDate: Date;
+
+  @Column({default: false})
+  renewAfterTrial: boolean;
+
+  @Column({
+    nullable: true,
+  })
+  trial_end_date: Date;
+
+  @Column({
+    enum: PaymentMethod,
+    nullable: true,
+  })
+  paymentMethod: PaymentMethod;
+
+  @Column({
+    enum: SubscriptionStatus,
+    default: SubscriptionStatus.ACTIVE,
+  })
+  status: SubscriptionStatus;
 
   @CreateDateColumn()
   createdAt: Date;

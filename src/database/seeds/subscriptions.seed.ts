@@ -1,67 +1,112 @@
-import { Subscriptions } from '../../subscriptions/entities/subscriptions.entity.js';
+import {
+  BillingPeriod,
+  CurrencyCode,
+  PaymentMethod,
+  Subscription,
+  SubscriptionStatus,
+} from '../../subscriptions/entities/subscriptions.entity.js';
 
 export type SubscriptionSeed = Pick<
-  Subscriptions,
-  'name' | 'amount' | 'currency' | 'billingCycle' | 'status'
->;
+  Subscription,
+  | 'name'
+  | 'price'
+  | 'currency'
+  | 'billingPeriod'
+  | 'startDate'
+  | 'paymentMethod'
+  | 'status'
+> &
+  Partial<
+    Pick<
+      Subscription,
+      'nextBillingDate' | 'trial_end_date'
+    >
+  >;
+
+function date(value: string): Date {
+  return new Date(`${value}T00:00:00.000Z`);
+}
 
 export function createSubscriptionSeeds(): SubscriptionSeed[] {
   return [
     {
       name: 'Netflix Standard',
-      amount: '13.49',
-      currency: 'EUR',
-      billingCycle: 'monthly',
-      status: 'active',
+      price: '13.49',
+      currency: CurrencyCode.EUR,
+      billingPeriod: BillingPeriod.MONTHLY,
+      startDate: date('2026-01-15'),
+      nextBillingDate: date('2026-10-15'),
+      paymentMethod: PaymentMethod.CARD,
+      status: SubscriptionStatus.ACTIVE,
     },
     {
       name: 'Spotify Premium',
-      amount: '11.12',
-      currency: 'EUR',
-      billingCycle: 'monthly',
-      status: 'active',
+      price: '11.12',
+      currency: CurrencyCode.EUR,
+      billingPeriod: BillingPeriod.MONTHLY,
+      startDate: date('2026-03-01'),
+      nextBillingDate: date('2026-10-01'),
+      paymentMethod: PaymentMethod.PAYPAL,
+      status: SubscriptionStatus.ACTIVE,
     },
     {
       name: 'Adobe Creative Cloud',
-      amount: '779.88',
-      currency: 'EUR',
-      billingCycle: 'yearly',
-      status: 'active',
+      price: '779.88',
+      currency: CurrencyCode.EUR,
+      billingPeriod: BillingPeriod.YEARLY,
+      startDate: date('2026-06-10'),
+      nextBillingDate: date('2027-06-10'),
+      paymentMethod: PaymentMethod.CARD,
+      status: SubscriptionStatus.ACTIVE,
     },
     {
       name: 'Notion Plus',
-      amount: '9.50',
-      currency: 'EUR',
-      billingCycle: 'monthly',
-      status: 'paused',
+      price: '9.50',
+      currency: CurrencyCode.EUR,
+      billingPeriod: BillingPeriod.MONTHLY,
+      startDate: date('2026-08-20'),
+      paymentMethod: PaymentMethod.GOOGLE_PAY,
+      status: SubscriptionStatus.PAUSED,
     },
     {
       name: 'OVHcloud VPS',
-      amount: '95.88',
-      currency: 'EUR',
-      billingCycle: 'yearly',
-      status: 'active',
+      price: '95.88',
+      currency: CurrencyCode.EUR,
+      billingPeriod: BillingPeriod.YEARLY,
+      startDate: date('2026-07-05'),
+      nextBillingDate: date('2027-07-05'),
+      paymentMethod: PaymentMethod.PAYPAL,
+      status: SubscriptionStatus.ACTIVE,
     },
     {
       name: 'Basic-Fit Comfort',
-      amount: '24.99',
-      currency: 'EUR',
-      billingCycle: 'monthly',
-      status: 'cancelled',
+      price: '24.99',
+      currency: CurrencyCode.EUR,
+      billingPeriod: BillingPeriod.MONTHLY,
+      startDate: date('2025-09-01'),
+        paymentMethod: PaymentMethod.PREPAY_CARD,
+      status: SubscriptionStatus.CANCELLED,
     },
     {
       name: 'Le Monde Numérique',
-      amount: '119.99',
-      currency: 'EUR',
-      billingCycle: 'yearly',
-      status: 'active',
+      price: '119.99',
+      currency: CurrencyCode.EUR,
+      billingPeriod: BillingPeriod.YEARLY,
+      startDate: date('2026-09-25'),
+      nextBillingDate: date('2026-10-09'),
+      trial_end_date: date('2026-10-09'),
+      paymentMethod: PaymentMethod.APPLE_PAY,
+      status: SubscriptionStatus.TRIAL,
     },
     {
       name: 'iCloud+',
-      amount: '2.99',
-      currency: 'EUR',
-      billingCycle: 'monthly',
-      status: 'active',
+      price: '2.99',
+      currency: CurrencyCode.EUR,
+      billingPeriod: BillingPeriod.MONTHLY,
+      startDate: date('2026-02-12'),
+      nextBillingDate: date('2026-10-12'),
+      paymentMethod: PaymentMethod.APPLE_PAY,
+      status: SubscriptionStatus.ACTIVE,
     },
   ];
 }
