@@ -5,6 +5,7 @@ import {SubscriptionsModule} from './subscriptions/subscriptions.module.js';
 import {ConfigModule} from "@nestjs/config";
 import {TypeOrmModule} from "@nestjs/typeorm";
 import {databaseOptions} from "./database/data-source.js";
+import {ScheduleModule} from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import {databaseOptions} from "./database/data-source.js";
       isGlobal: true,
       cache: true,
     }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot(databaseOptions),
     SubscriptionsModule],
   controllers: [AppController],

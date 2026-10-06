@@ -1,10 +1,8 @@
-import {Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
+import {Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
 
 export enum SubscriptionStatus {
   ACTIVE = 'active',
-  PAUSED = 'paused',
   TRIAL = 'trial',
-  EXPIRED = 'expired',
   CANCELLED = 'cancelled'
 }
 
@@ -80,6 +78,9 @@ export class Subscription {
     nullable: true,
   })
   paymentMethod: PaymentMethod;
+
+  @Column({default: false})
+  cancelAtPeriodEnd: boolean;
 
   @Column({
     enum: SubscriptionStatus,
