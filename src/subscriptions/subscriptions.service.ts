@@ -1,4 +1,4 @@
-import {Injectable, NotFoundException} from '@nestjs/common';
+import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
 import {CreateSubscriptionDto} from './dto/create-subscriptions.dto.js';
 import {CreateTrialSubscriptionDto} from './dto/create-trial-subscription.dto.js';
 import {InjectRepository} from '@nestjs/typeorm';
@@ -8,8 +8,10 @@ import {
   SubscriptionStatus,
 } from './entities/subscriptions.entity.js';
 import {LessThanOrEqual, Repository} from 'typeorm';
-import {addDays, addMonths, addYears, parseISO} from 'date-fns';
+import {addDays, addMonths, addYears, differenceInCalendarDays, parseISO} from 'date-fns';
 import {Cron, CronExpression} from "@nestjs/schedule";
+import {UpdateSubscriptionsDto} from "./dto/update-subscriptions.dto.js";
+import {SubscriptionsPaginationDto} from "./dto/subscriptions.pagination.js";
 
 @Injectable()
 export class SubscriptionsService {
@@ -45,6 +47,36 @@ export class SubscriptionsService {
     );
     subscription.status = SubscriptionStatus.TRIAL;
     return this.subscriptionRepository.save(subscription);
+  }
+
+  /*Récupérer les abonnements avec pagination*/
+  async findAllSubscriptions(query: SubscriptionsPaginationDto) {
+    const {page = 1, limit = 10, order = 'DESC'} = query;
+    const [data, total] = await this.subscriptionRepository.findAndCount({
+      take: limit,
+      skip: (page - 1) * limit,
+      order: {
+        createdAt: order
+      },
+    });
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    };
+  }
+
+  /*Mettre à jour un abonnement*/
+  async updateSubscription(id: string, updateSubscriptionDto: UpdateSubscriptionsDto) {
   }
 
   /*Annuler un abonnement (à la fin du prochain cycle de facturation ou immédiatement)*/
