@@ -30,8 +30,9 @@ export class SubscriptionsController {
   }
 
   @Patch(':id')
-  updateSubscription(
-  ) {}
+  updateSubscription(@Param('id') id: string, @Body() updateSubscriptionDto: UpdateSubscriptionsDto) {
+    return this.subscriptionsService.updateSubscription(id, updateSubscriptionDto);
+  }
 
   @Patch('cancel/:id')
   cancelSubscription(@Param('id') id: string, @Body() body: { cancel: "immediate" | "period_end" }) {

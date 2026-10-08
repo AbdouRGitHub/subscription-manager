@@ -26,6 +26,7 @@ export class SubscriptionsService {
     const subscription = this.subscriptionRepository.create(
       createSubscriptionDto
     );
+
     subscription.startDate = parseISO(createSubscriptionDto.startDate);
     subscription.nextBillingDate =
       subscription.billingPeriod === BillingPeriod.MONTHLY
@@ -77,6 +78,7 @@ export class SubscriptionsService {
 
   /*Mettre à jour un abonnement*/
   async updateSubscription(id: string, updateSubscriptionDto: UpdateSubscriptionsDto) {
+    return this.subscriptionRepository.save({id, ...updateSubscriptionDto});
   }
 
   /*Annuler un abonnement (à la fin du prochain cycle de facturation ou immédiatement)*/
