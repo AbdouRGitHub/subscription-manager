@@ -1,4 +1,4 @@
-import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
+import {Injectable, NotFoundException} from '@nestjs/common';
 import {CreateSubscriptionDto} from './dto/create-subscriptions.dto.js';
 import {CreateTrialSubscriptionDto} from './dto/create-trial-subscription.dto.js';
 import {InjectRepository} from '@nestjs/typeorm';
@@ -7,8 +7,8 @@ import {
   Subscription,
   SubscriptionStatus,
 } from './entities/subscriptions.entity.js';
-import {LessThanOrEqual, Repository} from 'typeorm';
-import {addDays, addMonths, addYears, differenceInCalendarDays, parseISO} from 'date-fns';
+import {IsNull, LessThanOrEqual, MoreThan, Not, Repository} from 'typeorm';
+import {addDays, addMonths, addYears, format, parseISO, startOfYear} from 'date-fns';
 import {Cron, CronExpression} from "@nestjs/schedule";
 import {UpdateSubscriptionsDto} from "./dto/update-subscriptions.dto.js";
 import {SubscriptionsPaginationDto} from "./dto/subscriptions.pagination.js";
@@ -42,12 +42,67 @@ export class SubscriptionsService {
   ) {
     const subscription = this.subscriptionRepository.create(createTrialSubscriptionDto);
     subscription.startDate = parseISO(createTrialSubscriptionDto.startDate);
-    subscription.trial_end_date = addDays(
+    subscription.trialEndDate = addDays(
       subscription.startDate,
       createTrialSubscriptionDto.trialDurationDays,
     );
     subscription.status = SubscriptionStatus.TRIAL;
     return this.subscriptionRepository.save(subscription);
+  }
+
+  /* Récupère les statistiques d'aperçu */
+  async getOverviewStats() {
+    const activeSubscriptions: number = await this.subscriptionRepository.countBy({status: SubscriptionStatus.ACTIVE});
+    const trialSubscriptions: number = await this.subscriptionRepository.countBy({status: SubscriptionStatus.TRIAL});
+
+    const mostExpensiveSubscription = await this.subscriptionRepository.find({
+      where: {status: SubscriptionStatus.ACTIVE, price: Not(IsNull())},
+      select: {name: true, price: true, currency: true},
+      order: {price: 'DESC'},
+      take: 1,
+    });
+
+    const nextDeadlines = await this.subscriptionRepository.find({
+      where: {
+        nextBillingDate: MoreThan(new Date()),
+      },
+      order: {nextBillingDate: 'ASC'},
+      take: 5,
+    });
+
+    // Le mois de début compte entièrement ; projection des actifs jusqu'à décembre.
+    const yearStart = startOfYear(new Date());
+    const nextYearStart = addYears(yearStart, 1);
+    const [expenses] = await this.subscriptionRepository.query(`
+        SELECT ROUND(COALESCE(SUM(
+                                      price
+                                          * (13 - EXTRACT(MONTH FROM GREATEST("startDate", $1::timestamp)))
+                                          / CASE "billingPeriod"
+                                                WHEN $4 THEN 1
+                                                WHEN $5 THEN 12
+                                          END
+                              ), 0), 2) ::text AS total
+        FROM subscriptions
+        WHERE status = $3
+          AND price IS NOT NULL
+          AND "startDate" < $2::timestamp
+    `, [
+      format(yearStart, 'yyyy-MM-dd'),
+      format(nextYearStart, 'yyyy-MM-dd'),
+      SubscriptionStatus.ACTIVE,
+      BillingPeriod.MONTHLY,
+      BillingPeriod.YEARLY,
+    ]) as Array<{ total: string }>;
+
+    const annualExpenses = Number(expenses.total);
+
+    return {
+      activeSubscriptions,
+      trialSubscriptions,
+      annualExpenses,
+      mostExpensiveSubscription,
+      nextDeadlines,
+    };
   }
 
   /*Récupérer les abonnements avec pagination*/
@@ -109,8 +164,8 @@ export class SubscriptionsService {
     for (const subscription of subscriptions) {
       const nextBillingDate =
         subscription.billingPeriod === BillingPeriod.MONTHLY
-          ? addMonths(subscription.trial_end_date, 1)
-          : addYears(subscription.trial_end_date, 1);
+          ? addMonths(subscription.trialEndDate, 1)
+          : addYears(subscription.trialEndDate, 1);
 
       await this.subscriptionRepository.update(
         {id: subscription.id, ...criterias},

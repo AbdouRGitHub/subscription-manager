@@ -42,20 +42,21 @@ export class Subscription {
     scale: 2,
     nullable: true,
   })
-  price: string;
+  price: string | null;
 
   @Column({
+    type: 'enum',
     enum: CurrencyCode,
     default: CurrencyCode.EUR,
   })
-  currency: string;
+  currency: CurrencyCode;
 
   @Column({
     type: 'enum',
     enum: BillingPeriod,
     nullable: true,
   })
-  billingPeriod: BillingPeriod;
+  billingPeriod: BillingPeriod | null;
 
   @Column()
   startDate: Date;
@@ -71,9 +72,10 @@ export class Subscription {
   @Column({
     nullable: true,
   })
-  trial_end_date: Date;
+  trialEndDate: Date;
 
   @Column({
+    type: 'enum',
     enum: PaymentMethod,
     nullable: true,
   })

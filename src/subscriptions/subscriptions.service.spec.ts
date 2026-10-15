@@ -1,6 +1,12 @@
 import {Test, TestingModule} from '@nestjs/testing';
 import {SubscriptionsService} from './subscriptions.service.js';
-import {BillingPeriod, CurrencyCode, PaymentMethod, Subscription, SubscriptionStatus} from "./entities/subscriptions.entity.js";
+import {
+  BillingPeriod,
+  CurrencyCode,
+  PaymentMethod,
+  Subscription,
+  SubscriptionStatus
+} from "./entities/subscriptions.entity.js";
 import {getRepositoryToken} from "@nestjs/typeorm";
 import {CreateSubscriptionDto} from "./dto/create-subscriptions.dto.js";
 
@@ -12,7 +18,6 @@ const monthlySubscriptionDtoMock: CreateSubscriptionDto = {
   startDate: "2026-10-09",
   paymentMethod: PaymentMethod.CARD
 }
-
 
 
 const annualSubscriptionDtoMock: CreateSubscriptionDto = {
@@ -27,6 +32,9 @@ const annualSubscriptionDtoMock: CreateSubscriptionDto = {
 const mockRepository = {
   create: vi.fn(),
   save: vi.fn(),
+  countBy: vi.fn(),
+  find: vi.fn(),
+  query: vi.fn(),
 }
 
 const savedFields = {
@@ -100,9 +108,19 @@ describe('SubscriptionsService', () => {
         ...savedFields,
       });
     });
-
-    describe("get subscriptions", () => {
-
-    })
   });
+
+  it('returns annual expenses as a number', async () => {
+    mockRepository.countBy.mockResolvedValueOnce(2).mockResolvedValueOnce(0);
+    mockRepository.find
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+    mockRepository.query.mockResolvedValueOnce([{total: '120.07'}]);
+
+    const result = await service.getOverviewStats();
+
+    expect(result.annualExpenses).toBe(120.07);
+  });
+
+
 });

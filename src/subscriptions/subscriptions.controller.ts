@@ -1,4 +1,4 @@
-import {Controller, Post, Body, Patch, Param, ParseUUIDPipe, Get, Query} from '@nestjs/common';
+import {Controller, Post, Body, Patch, Param, Get, Query} from '@nestjs/common';
 import {SubscriptionsService} from './subscriptions.service.js';
 import {CreateSubscriptionDto} from './dto/create-subscriptions.dto.js';
 import {CreateTrialSubscriptionDto} from './dto/create-trial-subscription.dto.js';
@@ -27,6 +27,11 @@ export class SubscriptionsController {
   @Get()
   findAllSubscriptions(@Query() query: SubscriptionsPaginationDto) {
     return this.subscriptionsService.findAllSubscriptions(query);
+  }
+
+  @Get('overview')
+  getOverviewStats() {
+    return this.subscriptionsService.getOverviewStats();
   }
 
   @Patch(':id')
