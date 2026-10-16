@@ -1,5 +1,6 @@
 import {
   BillingPeriod,
+  Category,
   CurrencyCode,
   PaymentMethod,
   Subscription,
@@ -10,6 +11,7 @@ export type SubscriptionSeed = Pick<
   Subscription,
   | 'name'
   | 'currency'
+  | 'category'
   | 'startDate'
   | 'renewAfterTrial'
   | 'cancelAtPeriodEnd'
@@ -21,24 +23,203 @@ export type SubscriptionSeed = Pick<
       | 'price'
       | 'billingPeriod'
       | 'nextBillingDate'
-      | 'trial_end_date'
+      | 'trialEndDate'
       | 'paymentMethod'
     >
   >;
+
+type SubscriptionSeedWithoutCategory = Omit<SubscriptionSeed, 'category'>;
 
 function date(value: string): Date {
   return new Date(`${value}T00:00:00.000Z`);
 }
 
+function activeSubscription(
+  name: string,
+  price: string,
+  billingPeriod: BillingPeriod,
+  startDate: string,
+  nextBillingDate: string,
+  paymentMethod: PaymentMethod,
+  currency = CurrencyCode.EUR,
+  cancelAtPeriodEnd = false,
+): SubscriptionSeedWithoutCategory {
+  return {
+    name,
+    price,
+    currency,
+    billingPeriod,
+    startDate: date(startDate),
+    nextBillingDate: date(nextBillingDate),
+    paymentMethod,
+    renewAfterTrial: false,
+    cancelAtPeriodEnd,
+    status: SubscriptionStatus.ACTIVE,
+  };
+}
+
+function cancelledSubscription(
+  name: string,
+  price: string,
+  billingPeriod: BillingPeriod,
+  startDate: string,
+  paymentMethod: PaymentMethod,
+  currency = CurrencyCode.EUR,
+): SubscriptionSeedWithoutCategory {
+  return {
+    name,
+    price,
+    currency,
+    billingPeriod,
+    startDate: date(startDate),
+    paymentMethod,
+    renewAfterTrial: false,
+    cancelAtPeriodEnd: false,
+    status: SubscriptionStatus.CANCELLED,
+  };
+}
+
+function renewableTrial(
+  name: string,
+  price: string,
+  billingPeriod: BillingPeriod,
+  startDate: string,
+  trialEndDate: string,
+  paymentMethod: PaymentMethod,
+  currency = CurrencyCode.EUR,
+): SubscriptionSeedWithoutCategory {
+  return {
+    name,
+    price,
+    currency,
+    billingPeriod,
+    startDate: date(startDate),
+    trialEndDate: date(trialEndDate),
+    paymentMethod,
+    renewAfterTrial: true,
+    cancelAtPeriodEnd: false,
+    status: SubscriptionStatus.TRIAL,
+  };
+}
+
+const additionalSubscriptionSeeds: SubscriptionSeedWithoutCategory[] = [
+  activeSubscription('Max Standard', '9.99', BillingPeriod.MONTHLY, '2026-04-21', '2026-10-21', PaymentMethod.CARD),
+  activeSubscription('Paramount+', '79.90', BillingPeriod.YEARLY, '2026-06-12', '2027-06-12', PaymentMethod.PAYPAL),
+  activeSubscription('Crunchyroll Fan', '5.99', BillingPeriod.MONTHLY, '2026-08-18', '2026-10-18', PaymentMethod.GOOGLE_PAY),
+  activeSubscription('DAZN', '19.99', BillingPeriod.MONTHLY, '2026-03-26', '2026-10-26', PaymentMethod.CARD, CurrencyCode.EUR, true),
+  activeSubscription('MUBI', '11.99', BillingPeriod.MONTHLY, '2026-09-28', '2026-10-28', PaymentMethod.APPLE_PAY),
+  activeSubscription('Audible', '9.95', BillingPeriod.MONTHLY, '2026-02-23', '2026-10-23', PaymentMethod.CARD),
+  activeSubscription('Kindle Unlimited', '9.99', BillingPeriod.MONTHLY, '2026-05-30', '2026-10-30', PaymentMethod.CARD),
+  cancelledSubscription('Uber One', '5.99', BillingPeriod.MONTHLY, '2026-01-09', PaymentMethod.PAYPAL),
+  activeSubscription('Tidal HiFi', '10.99', BillingPeriod.MONTHLY, '2026-07-24', '2026-10-24', PaymentMethod.PAYPAL),
+  activeSubscription('HelloFresh Box', '49.99', BillingPeriod.MONTHLY, '2026-04-23', '2026-10-23', PaymentMethod.CARD),
+  activeSubscription('Deliveroo Plus', '5.99', BillingPeriod.MONTHLY, '2026-08-25', '2026-10-25', PaymentMethod.GOOGLE_PAY),
+  activeSubscription('Apple Music', '10.99', BillingPeriod.MONTHLY, '2026-03-20', '2026-10-20', PaymentMethod.APPLE_PAY),
+  activeSubscription('Xbox Game Pass Ultimate', '17.99', BillingPeriod.MONTHLY, '2026-06-27', '2026-10-27', PaymentMethod.CARD),
+  activeSubscription('GeForce NOW Priority', '10.99', BillingPeriod.MONTHLY, '2026-09-19', '2026-10-19', PaymentMethod.PAYPAL),
+  activeSubscription('EA Play', '39.99', BillingPeriod.YEARLY, '2026-05-06', '2027-05-06', PaymentMethod.CARD),
+  activeSubscription('World of Warcraft', '12.99', BillingPeriod.MONTHLY, '2026-07-22', '2026-10-22', PaymentMethod.PREPAY_CARD),
+  activeSubscription('Final Fantasy XIV', '12.99', BillingPeriod.MONTHLY, '2026-09-29', '2026-10-29', PaymentMethod.CARD),
+  activeSubscription('Discord Nitro', '99.99', BillingPeriod.YEARLY, '2026-08-11', '2027-08-11', PaymentMethod.PAYPAL),
+  activeSubscription('Twitch Turbo', '11.99', BillingPeriod.MONTHLY, '2026-04-30', '2026-10-30', PaymentMethod.PAYPAL),
+  activeSubscription('Humble Choice', '11.99', BillingPeriod.MONTHLY, '2026-02-17', '2026-10-17', PaymentMethod.CARD, CurrencyCode.EUR, true),
+  activeSubscription('Google Workspace Business Starter', '6.80', BillingPeriod.MONTHLY, '2026-06-28', '2026-10-28', PaymentMethod.CARD),
+  activeSubscription('Slack Pro', '8.25', BillingPeriod.MONTHLY, '2026-05-25', '2026-10-25', PaymentMethod.CARD, CurrencyCode.EUR, true),
+  activeSubscription('Zoom Pro', '149.90', BillingPeriod.YEARLY, '2026-03-09', '2027-03-09', PaymentMethod.PAYPAL),
+  activeSubscription('Todoist Pro', '48.00', BillingPeriod.YEARLY, '2026-01-19', '2027-01-19', PaymentMethod.GOOGLE_PAY),
+  activeSubscription('Linear Standard', '10.00', BillingPeriod.MONTHLY, '2026-08-23', '2026-10-23', PaymentMethod.CARD, CurrencyCode.USD),
+  renewableTrial('Miro Starter Trial', '96.00', BillingPeriod.YEARLY, '2026-10-10', '2026-10-24', PaymentMethod.CARD),
+  activeSubscription('Canva Pro', '109.99', BillingPeriod.YEARLY, '2026-07-13', '2027-07-13', PaymentMethod.PAYPAL),
+  activeSubscription('Grammarly Premium', '144.00', BillingPeriod.YEARLY, '2026-02-04', '2027-02-04', PaymentMethod.CARD, CurrencyCode.USD),
+  activeSubscription('Proton Unlimited', '119.88', BillingPeriod.YEARLY, '2026-09-01', '2027-09-01', PaymentMethod.CARD),
+  activeSubscription('Dashlane Premium', '52.99', BillingPeriod.YEARLY, '2026-06-16', '2027-06-16', PaymentMethod.PAYPAL),
+  activeSubscription('Surfshark One', '59.76', BillingPeriod.YEARLY, '2026-04-07', '2027-04-07', PaymentMethod.CARD),
+  activeSubscription('ExpressVPN', '99.95', BillingPeriod.YEARLY, '2026-08-14', '2027-08-14', PaymentMethod.PAYPAL, CurrencyCode.USD),
+  activeSubscription('Backblaze Personal Backup', '99.00', BillingPeriod.YEARLY, '2026-05-22', '2027-05-22', PaymentMethod.CARD, CurrencyCode.USD),
+  activeSubscription('pCloud Premium', '49.99', BillingPeriod.YEARLY, '2026-07-18', '2027-07-18', PaymentMethod.PAYPAL),
+  activeSubscription('DigitalOcean Droplet', '12.00', BillingPeriod.MONTHLY, '2026-09-30', '2026-10-30', PaymentMethod.CARD, CurrencyCode.USD),
+  activeSubscription('Vercel Pro', '20.00', BillingPeriod.MONTHLY, '2026-06-26', '2026-10-26', PaymentMethod.CARD, CurrencyCode.USD),
+  activeSubscription('Render Individual', '19.00', BillingPeriod.MONTHLY, '2026-07-27', '2026-10-27', PaymentMethod.CARD, CurrencyCode.USD),
+  cancelledSubscription('Heroku Eco', '5.00', BillingPeriod.MONTHLY, '2026-02-01', PaymentMethod.CARD, CurrencyCode.USD),
+  activeSubscription('AWS Route 53', '4.50', BillingPeriod.MONTHLY, '2026-01-28', '2026-10-28', PaymentMethod.CARD, CurrencyCode.USD),
+  activeSubscription('Cloudflare Pro', '25.00', BillingPeriod.MONTHLY, '2026-08-20', '2026-10-20', PaymentMethod.CARD, CurrencyCode.USD),
+  activeSubscription('Coursera Plus', '399.00', BillingPeriod.YEARLY, '2026-03-17', '2027-03-17', PaymentMethod.CARD),
+  activeSubscription('Udemy Personal Plan', '26.99', BillingPeriod.MONTHLY, '2026-09-21', '2026-10-21', PaymentMethod.PAYPAL),
+  activeSubscription('OpenClassrooms Plus', '20.00', BillingPeriod.MONTHLY, '2026-05-24', '2026-10-24', PaymentMethod.CARD),
+  activeSubscription('Babbel', '83.99', BillingPeriod.YEARLY, '2026-06-29', '2027-06-29', PaymentMethod.PAYPAL),
+  activeSubscription('Calm Premium', '49.99', BillingPeriod.YEARLY, '2026-04-23', '2027-04-23', PaymentMethod.APPLE_PAY),
+  activeSubscription('Fitbit Premium', '8.99', BillingPeriod.MONTHLY, '2026-02-19', '2026-10-19', PaymentMethod.GOOGLE_PAY),
+  activeSubscription('WHOOP', '239.00', BillingPeriod.YEARLY, '2026-08-08', '2027-08-08', PaymentMethod.CARD, CurrencyCode.USD),
+  activeSubscription('Peloton App One', '12.99', BillingPeriod.MONTHLY, '2026-09-26', '2026-10-26', PaymentMethod.APPLE_PAY),
+  activeSubscription('AllTrails+', '35.99', BillingPeriod.YEARLY, '2026-05-16', '2027-05-16', PaymentMethod.GOOGLE_PAY),
+  activeSubscription('The Athletic', '7.99', BillingPeriod.MONTHLY, '2026-07-30', '2026-10-30', PaymentMethod.CARD, CurrencyCode.USD),
+];
+
+const categoryRules: ReadonlyArray<{
+  category: Category;
+  keywords: readonly string[];
+}> = [
+  {
+    category: Category.FOOD,
+    keywords: ['uber one', 'hellofresh', 'deliveroo'],
+  },
+  {
+    category: Category.HEALTH,
+    keywords: ['headspace', 'calm'],
+  },
+  {
+    category: Category.SPORTS,
+    keywords: ['basic-fit', 'strava', 'dazn', 'fitbit', 'whoop', 'peloton', 'alltrails'],
+  },
+  {
+    category: Category.EDUCATION,
+    keywords: ['duolingo', 'coursera', 'udemy', 'openclassrooms', 'babbel', 'grammarly'],
+  },
+  {
+    category: Category.TRAVEL,
+    keywords: ['sncf'],
+  },
+  {
+    category: Category.GAMING,
+    keywords: ['nintendo', 'playstation', 'xbox', 'geforce', 'ea play', 'world of warcraft', 'final fantasy', 'discord', 'humble'],
+  },
+  {
+    category: Category.MUSIC,
+    keywords: ['spotify', 'deezer', 'tidal', 'apple music'],
+  },
+  {
+    category: Category.CINEMA,
+    keywords: ['netflix', 'disney+', 'canal+', 'apple tv+', 'max standard', 'paramount+', 'mubi', 'crunchyroll'],
+  },
+  {
+    category: Category.ENTERTAINMENT,
+    keywords: ['youtube', 'amazon prime', 'audible', 'kindle', 'le monde', 'mediapart', 'the athletic', 'twitch'],
+  },
+  {
+    category: Category.LIFESTYLE,
+    keywords: ['icloud', 'notion', 'figma', 'microsoft 365', 'google one', 'dropbox', '1password', 'nordvpn', 'surfshark', 'expressvpn', 'free mobile', 'orange fibre'],
+  },
+];
+
+function categoryFor(name: string): Category {
+  const normalizedName = name.toLocaleLowerCase('fr');
+
+  return (
+    categoryRules.find(({ keywords }) =>
+      keywords.some((keyword) => normalizedName.includes(keyword)),
+    )?.category ?? Category.NOTHING
+  );
+}
+
 export function createSubscriptionSeeds(): SubscriptionSeed[] {
-  return [
+  const subscriptions: SubscriptionSeedWithoutCategory[] = [
     {
       name: 'Netflix Standard',
       price: '13.49',
       currency: CurrencyCode.EUR,
       billingPeriod: BillingPeriod.MONTHLY,
       startDate: date('2026-01-15'),
-      nextBillingDate: date('2026-10-15'),
+      nextBillingDate: date('2026-11-15'),
       paymentMethod: PaymentMethod.CARD,
       renewAfterTrial: false,
       cancelAtPeriodEnd: false,
@@ -108,8 +289,8 @@ export function createSubscriptionSeeds(): SubscriptionSeed[] {
       price: '119.99',
       currency: CurrencyCode.EUR,
       billingPeriod: BillingPeriod.YEARLY,
-      startDate: date('2026-09-25'),
-      trial_end_date: date('2026-10-09'),
+      startDate: date('2026-10-09'),
+      trialEndDate: date('2026-10-23'),
       paymentMethod: PaymentMethod.APPLE_PAY,
       renewAfterTrial: true,
       cancelAtPeriodEnd: false,
@@ -118,8 +299,8 @@ export function createSubscriptionSeeds(): SubscriptionSeed[] {
     {
       name: 'Figma Professional Trial',
       currency: CurrencyCode.EUR,
-      startDate: date('2026-10-01'),
-      trial_end_date: date('2026-10-15'),
+      startDate: date('2026-10-15'),
+      trialEndDate: date('2026-10-29'),
       renewAfterTrial: false,
       cancelAtPeriodEnd: false,
       status: SubscriptionStatus.TRIAL,
@@ -130,7 +311,7 @@ export function createSubscriptionSeeds(): SubscriptionSeed[] {
       currency: CurrencyCode.EUR,
       billingPeriod: BillingPeriod.MONTHLY,
       startDate: date('2026-02-12'),
-      nextBillingDate: date('2026-10-12'),
+      nextBillingDate: date('2026-11-12'),
       paymentMethod: PaymentMethod.APPLE_PAY,
       renewAfterTrial: false,
       cancelAtPeriodEnd: false,
@@ -166,7 +347,7 @@ export function createSubscriptionSeeds(): SubscriptionSeed[] {
       currency: CurrencyCode.EUR,
       billingPeriod: BillingPeriod.MONTHLY,
       startDate: date('2026-02-08'),
-      nextBillingDate: date('2026-10-08'),
+      nextBillingDate: date('2026-11-08'),
       paymentMethod: PaymentMethod.GOOGLE_PAY,
       renewAfterTrial: false,
       cancelAtPeriodEnd: false,
@@ -202,7 +383,7 @@ export function createSubscriptionSeeds(): SubscriptionSeed[] {
       currency: CurrencyCode.EUR,
       billingPeriod: BillingPeriod.MONTHLY,
       startDate: date('2026-06-11'),
-      nextBillingDate: date('2026-10-11'),
+      nextBillingDate: date('2026-11-11'),
       paymentMethod: PaymentMethod.GOOGLE_PAY,
       renewAfterTrial: false,
       cancelAtPeriodEnd: false,
@@ -298,7 +479,7 @@ export function createSubscriptionSeeds(): SubscriptionSeed[] {
       currency: CurrencyCode.EUR,
       billingPeriod: BillingPeriod.MONTHLY,
       startDate: date('2026-04-13'),
-      nextBillingDate: date('2026-10-13'),
+      nextBillingDate: date('2026-11-13'),
       paymentMethod: PaymentMethod.PAYPAL,
       renewAfterTrial: false,
       cancelAtPeriodEnd: false,
@@ -310,7 +491,7 @@ export function createSubscriptionSeeds(): SubscriptionSeed[] {
       currency: CurrencyCode.EUR,
       billingPeriod: BillingPeriod.MONTHLY,
       startDate: date('2026-08-16'),
-      nextBillingDate: date('2026-10-16'),
+      nextBillingDate: date('2026-11-16'),
       paymentMethod: PaymentMethod.APPLE_PAY,
       renewAfterTrial: false,
       cancelAtPeriodEnd: false,
@@ -358,7 +539,7 @@ export function createSubscriptionSeeds(): SubscriptionSeed[] {
       currency: CurrencyCode.EUR,
       billingPeriod: BillingPeriod.MONTHLY,
       startDate: date('2025-11-10'),
-      nextBillingDate: date('2026-10-10'),
+      nextBillingDate: date('2026-11-10'),
       paymentMethod: PaymentMethod.CARD,
       renewAfterTrial: false,
       cancelAtPeriodEnd: false,
@@ -429,11 +610,17 @@ export function createSubscriptionSeeds(): SubscriptionSeed[] {
       currency: CurrencyCode.EUR,
       billingPeriod: BillingPeriod.YEARLY,
       startDate: date('2026-10-03'),
-      trial_end_date: date('2026-10-17'),
+      trialEndDate: date('2026-10-17'),
       paymentMethod: PaymentMethod.APPLE_PAY,
       renewAfterTrial: true,
       cancelAtPeriodEnd: false,
       status: SubscriptionStatus.TRIAL,
     },
+    ...additionalSubscriptionSeeds,
   ];
+
+  return subscriptions.map((subscription) => ({
+    ...subscription,
+    category: categoryFor(subscription.name),
+  }));
 }

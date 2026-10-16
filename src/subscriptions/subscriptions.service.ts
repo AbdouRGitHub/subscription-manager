@@ -73,7 +73,7 @@ export class SubscriptionsService {
     // Le mois de début compte entièrement ; projection des actifs jusqu'à décembre.
     const yearStart = startOfYear(new Date());
     const nextYearStart = addYears(yearStart, 1);
-    const [expenses] = await this.subscriptionRepository.query(`
+    const [expenses]: [{ total: string }] = await this.subscriptionRepository.query(`
         SELECT ROUND(COALESCE(SUM(
                                       price
                                           * (13 - EXTRACT(MONTH FROM GREATEST("startDate", $1::timestamp)))
@@ -92,14 +92,50 @@ export class SubscriptionsService {
       SubscriptionStatus.ACTIVE,
       BillingPeriod.MONTHLY,
       BillingPeriod.YEARLY,
-    ]) as Array<{ total: string }>;
+    ]);
 
     const annualExpenses = Number(expenses.total);
+
+    const monthlyCategoryRows: Array<{
+      category: Subscription['category'];
+      amount: string;
+      percentage: string;
+    }> = await this.subscriptionRepository.query(`
+        WITH category_totals AS (SELECT category,
+                                        SUM(CASE "billingPeriod"
+                                                WHEN $2 THEN price
+                                                WHEN $3 THEN price / 12
+                                                ELSE 0
+                                            END) AS amount
+                                 FROM subscriptions
+                                 WHERE status = $1
+                                   AND price IS NOT NULL
+                                   AND "startDate" <= $4:: timestamp
+        GROUP BY category
+            )
+        SELECT category,
+               ROUND(amount, 2)::text AS amount, ROUND(amount * 100 / SUM(amount) OVER (), 2) ::text AS percentage
+        FROM category_totals
+        WHERE amount > 0
+        ORDER BY amount DESC, category
+    `, [
+      SubscriptionStatus.ACTIVE,
+      BillingPeriod.MONTHLY,
+      BillingPeriod.YEARLY,
+      format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+    ]);
+
+    const monthlyExpensesByCategory = (monthlyCategoryRows ?? []).map(row => ({
+      category: row.category,
+      amount: Number(row.amount),
+      percentage: Number(row.percentage),
+    }));
 
     return {
       activeSubscriptions,
       trialSubscriptions,
       annualExpenses,
+      monthlyExpensesByCategory,
       mostExpensiveSubscription,
       nextDeadlines,
     };

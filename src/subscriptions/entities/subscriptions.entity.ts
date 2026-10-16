@@ -28,6 +28,20 @@ export enum BillingPeriod {
   YEARLY = 'yearly',
 }
 
+export enum Category {
+  NOTHING = 'nothing',
+  ENTERTAINMENT = 'entertainment',
+  FOOD = 'food',
+  SPORTS = 'sports',
+  HEALTH = 'health',
+  EDUCATION = 'education',
+  GAMING = 'gaming',
+  TRAVEL = 'travel',
+  LIFESTYLE = 'lifestyle',
+  MUSIC = 'music',
+  CINEMA = 'cinema'
+}
+
 @Entity({name: 'subscriptions'})
 export class Subscription {
   @PrimaryGeneratedColumn("uuid")
@@ -50,6 +64,13 @@ export class Subscription {
     default: CurrencyCode.EUR,
   })
   currency: CurrencyCode;
+
+  @Column({
+    type: 'enum',
+    enum: Category,
+    default: Category.NOTHING,
+  })
+  category: Category;
 
   @Column({
     type: 'enum',

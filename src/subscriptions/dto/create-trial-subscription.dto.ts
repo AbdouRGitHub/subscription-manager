@@ -13,6 +13,7 @@ import {
 } from 'class-validator';
 import {
   BillingPeriod,
+  Category,
   CurrencyCode,
   PaymentMethod,
 } from '../entities/subscriptions.entity.js';
@@ -25,6 +26,10 @@ export class CreateTrialSubscriptionDto {
 
   @IsDateString()
   startDate: string;
+
+  @IsOptional()
+  @IsEnum(Category)
+  category?: Category;
   
   @IsInt()
   @IsIn([7, 14, 30])

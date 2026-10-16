@@ -10,6 +10,7 @@ import {
 } from 'class-validator';
 import {
   BillingPeriod,
+  Category,
   CurrencyCode,
   PaymentMethod,
 } from '../entities/subscriptions.entity.js';
@@ -27,6 +28,10 @@ export class CreateSubscriptionDto {
   @IsOptional()
   @IsEnum(CurrencyCode)
   currency?: CurrencyCode;
+
+  @IsOptional()
+  @IsEnum(Category)
+  category?: Category;
 
   @IsEnum(BillingPeriod)
   billingPeriod: BillingPeriod;
