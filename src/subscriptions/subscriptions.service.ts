@@ -3,7 +3,7 @@ import {CreateSubscriptionDto} from './dto/create-subscriptions.dto.js';
 import {CreateTrialSubscriptionDto} from './dto/create-trial-subscription.dto.js';
 import {InjectRepository} from '@nestjs/typeorm';
 import {
-  BillingPeriod,
+  BillingPeriod, Category,
   Subscription,
   SubscriptionStatus,
 } from './entities/subscriptions.entity.js';
@@ -51,9 +51,37 @@ export class SubscriptionsService {
   }
 
   /* Récupère les statistiques d'aperçu */
-  async getOverviewStats() {
+  async getOverviewStats(): Promise<{
+    activeSubscriptions: number,
+    trialSubscriptions: number,
+    monthlyExpenses: number
+    annualExpenses: number,
+    monthlyExpensesByCategory: { category: Category, amount: number, percentage: number }[],
+    mostExpensiveSubscription: Subscription[],
+    nextDeadlines: Subscription[]
+  }> {
     const activeSubscriptions: number = await this.subscriptionRepository.countBy({status: SubscriptionStatus.ACTIVE});
     const trialSubscriptions: number = await this.subscriptionRepository.countBy({status: SubscriptionStatus.TRIAL});
+
+    const [monthlyExpenseRow]: [{ total: string }] = await this.subscriptionRepository.query(`
+        SELECT ROUND(COALESCE(SUM(
+            CASE "billingPeriod"
+              WHEN $1 THEN price
+              WHEN $2 THEN price / 12
+              ELSE 0
+            END
+        ), 0), 2)::text AS total
+        FROM subscriptions
+        WHERE status = $3
+          AND price IS NOT NULL
+          AND "startDate" <= $4::timestamp
+    `, [
+      BillingPeriod.MONTHLY,
+      BillingPeriod.YEARLY,
+      SubscriptionStatus.ACTIVE,
+      format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+    ]);
+    const monthlyExpenses = Number(monthlyExpenseRow.total);
 
     const mostExpensiveSubscription = await this.subscriptionRepository.find({
       where: {status: SubscriptionStatus.ACTIVE, price: Not(IsNull())},
@@ -134,6 +162,7 @@ export class SubscriptionsService {
     return {
       activeSubscriptions,
       trialSubscriptions,
+      monthlyExpenses,
       annualExpenses,
       monthlyExpensesByCategory,
       mostExpensiveSubscription,
